@@ -6,11 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DeviceVerificationResult } from '../components/DeviceVerificationResult';
 import { useToast } from '@/components/ui/use-toast';
 import backend from '~backend/client';
-import type { VerifyDeviceResponse } from '~backend/verification/verify';
+import type { GetDeviceResponse } from '~backend/verification/get_device';
 
 export function DeviceDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const [result, setResult] = useState<VerifyDeviceResponse | null>(null);
+  const [result, setResult] = useState<GetDeviceResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -19,11 +19,8 @@ export function DeviceDetailsPage() {
       if (!id) return;
 
       try {
-        // For demo purposes, we'll verify by serial number
-        // In a real app, you'd have a separate endpoint to get device by ID
-        const response = await backend.verification.verify({
-          identifier: `SN${id}`,
-          identifierType: 'serial',
+        const response = await backend.verification.getDevice({
+          id: parseInt(id),
         });
         setResult(response);
       } catch (error) {

@@ -4,19 +4,27 @@ import { Header } from './components/Header';
 import { VerificationPage } from './pages/VerificationPage';
 import { SearchPage } from './pages/SearchPage';
 import { DeviceDetailsPage } from './pages/DeviceDetailsPage';
+import { ApiDashboardPage } from './pages/ApiDashboardPage';
 
 export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<VerificationPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/device/:id" element={<DeviceDetailsPage />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/api-dashboard" element={<ApiDashboardPage />} />
+          <Route path="/*" element={
+            <>
+              <Header />
+              <main className="container mx-auto px-4 py-8">
+                <Routes>
+                  <Route path="/" element={<VerificationPage />} />
+                  <Route path="/search" element={<SearchPage />} />
+                  <Route path="/device/:id" element={<DeviceDetailsPage />} />
+                </Routes>
+              </main>
+            </>
+          } />
+        </Routes>
         <Toaster />
       </div>
     </Router>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Shield, Menu } from 'lucide-react';
+import { Search, Shield, Menu, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -9,6 +9,7 @@ export function Header() {
   const navigation = [
     { name: 'Verify Device', href: '/', icon: Shield },
     { name: 'Search Devices', href: '/search', icon: Search },
+    { name: 'API Dashboard', href: '/api-dashboard', icon: Settings },
   ];
 
   return (
