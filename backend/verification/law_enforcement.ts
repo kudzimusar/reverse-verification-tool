@@ -182,7 +182,20 @@ export const getLawEnforcementReports = api<GetLawEnforcementReportsRequest, Get
       whereConditions.push(`ler.reporter_id = ${reporterId}`);
     }
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    let query = `
+      SELECT ler.id, ler.device_id, d.device_name, ler.report_type,
+             ler.jurisdiction, ler.case_number, p.name as partner_name,
+             ler.status, ler.created_at, ler.blockchain_proof_hash
+      FROM law_enforcement_reports ler
+      JOIN devices d ON ler.device_id = d.id
+      JOIN partners p ON ler.reporter_id = p.id
+    `;
+
+    if (whereConditions.length > 0) {
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+
+    query += ` ORDER BY ler.created_at DESC LIMIT ${limit}`;
 
     const reports = await verificationDB.queryAll<{
       id: number;
@@ -195,23 +208,14 @@ export const getLawEnforcementReports = api<GetLawEnforcementReportsRequest, Get
       status: string;
       created_at: Date;
       blockchain_proof_hash: string;
-    }>`
-      SELECT ler.id, ler.device_id, d.device_name, ler.report_type,
-             ler.jurisdiction, ler.case_number, p.name as partner_name,
-             ler.status, ler.created_at, ler.blockchain_proof_hash
-      FROM law_enforcement_reports ler
-      JOIN devices d ON ler.device_id = d.id
-      JOIN partners p ON ler.reporter_id = p.id
-      ${whereClause}
-      ORDER BY ler.created_at DESC
-      LIMIT ${limit}
-    `;
+    }>(query);
 
-    const totalResult = await verificationDB.queryRow<{ count: number }>`
-      SELECT COUNT(*) as count
-      FROM law_enforcement_reports ler
-      ${whereClause}
-    `;
+    let countQuery = `SELECT COUNT(*) as count FROM law_enforcement_reports ler`;
+    if (whereConditions.length > 0) {
+      countQuery += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+
+    const totalResult = await verificationDB.queryRow<{ count: number }>(countQuery);
 
     return {
       reports: reports.map(report => ({

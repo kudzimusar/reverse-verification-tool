@@ -1,5 +1,6 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { verificationDB } from "./db";
+import { validateEmail, validatePhoneNumber, ValidationError } from "./validation";
 
 export interface WatchDeviceRequest {
   deviceId: number;
@@ -21,6 +22,18 @@ export interface WatchDeviceResponse {
 export const watchDevice = api<WatchDeviceRequest, WatchDeviceResponse>(
   { expose: true, method: "POST", path: "/watch-device" },
   async (req) => {
+    try {
+      validateEmail(req.userEmail);
+      if (req.userPhone) {
+        validatePhoneNumber(req.userPhone);
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw APIError.invalidArgument(error.message);
+      }
+      throw error;
+    }
+
     const { deviceId, userEmail, userPhone, notificationPreferences } = req;
 
     // Check if device exists
@@ -29,7 +42,7 @@ export const watchDevice = api<WatchDeviceRequest, WatchDeviceResponse>(
     `;
 
     if (!device) {
-      throw new Error("Device not found");
+      throw APIError.notFound("Device not found");
     }
 
     // Check if user is already watching this device

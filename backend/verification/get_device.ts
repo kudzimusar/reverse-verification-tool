@@ -1,5 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { verificationDB } from "./db";
+import { getCachedDevice, setCachedDevice } from "./cache";
 
 export interface GetDeviceRequest {
   id: number;
@@ -49,6 +50,67 @@ export const getDevice = api<GetDeviceRequest, GetDeviceResponse>(
   { expose: true, method: "GET", path: "/device/:id" },
   async (req) => {
     const { id } = req;
+
+    const cachedDevice = await getCachedDevice(id.toString());
+    if (cachedDevice) {
+      const ownershipHistory = await verificationDB.queryAll`
+        SELECT owner_alias, owner_type, verification_level, transfer_date, location_country, is_current_owner
+        FROM ownership_history 
+        WHERE device_id = ${id}
+        ORDER BY transfer_date DESC
+      `;
+
+      const events = await verificationDB.queryAll`
+        SELECT id, event_type, event_description, event_date, provider_name, verified
+        FROM device_events 
+        WHERE device_id = ${id}
+        ORDER BY event_date DESC
+      `;
+
+      const reportResult = await verificationDB.queryRow`
+        SELECT COUNT(*) as count
+        FROM reports 
+        WHERE device_id = ${id}
+      `;
+
+      return {
+        device: {
+          id: parseInt(cachedDevice.id),
+          serialNumber: cachedDevice.imei,
+          imei: cachedDevice.imei,
+          deviceName: cachedDevice.manufacturer || "Unknown",
+          model: cachedDevice.model || "Unknown",
+          brand: cachedDevice.manufacturer || "Unknown",
+          status: cachedDevice.status as any,
+          lastVerified: cachedDevice.updatedAt,
+        },
+        currentOwner: ownershipHistory.find(o => o.is_current_owner) ? {
+          ownerAlias: ownershipHistory.find(o => o.is_current_owner)!.owner_alias,
+          ownerType: ownershipHistory.find(o => o.is_current_owner)!.owner_type,
+          verificationLevel: ownershipHistory.find(o => o.is_current_owner)!.verification_level as any,
+          transferDate: ownershipHistory.find(o => o.is_current_owner)!.transfer_date,
+          locationCountry: ownershipHistory.find(o => o.is_current_owner)!.location_country,
+          isCurrentOwner: true,
+        } : undefined,
+        ownershipHistory: ownershipHistory.map(o => ({
+          ownerAlias: o.owner_alias,
+          ownerType: o.owner_type,
+          verificationLevel: o.verification_level as any,
+          transferDate: o.transfer_date,
+          locationCountry: o.location_country,
+          isCurrentOwner: o.is_current_owner,
+        })),
+        events: events.map(e => ({
+          id: e.id,
+          eventType: e.event_type,
+          eventDescription: e.event_description,
+          eventDate: e.event_date,
+          providerName: e.provider_name,
+          verified: e.verified,
+        })),
+        reportCount: reportResult?.count || 0,
+      };
+    }
 
     // Find device by ID
     const device = await verificationDB.queryRow<{
@@ -109,6 +171,18 @@ export const getDevice = api<GetDeviceRequest, GetDeviceResponse>(
     `;
 
     const currentOwner = ownershipHistory.find(owner => owner.is_current_owner);
+
+    await setCachedDevice(id.toString(), {
+      id: id.toString(),
+      imei: device.imei || device.serial_number,
+      status: device.status,
+      manufacturer: device.brand,
+      model: device.model,
+      trustScore: 0,
+      verificationCount: 0,
+      reportCount: reportResult?.count || 0,
+      updatedAt: device.updated_at,
+    });
 
     return {
       device: {

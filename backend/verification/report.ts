@@ -1,5 +1,6 @@
-import { api } from "encore.dev/api";
+import { api, APIError } from "encore.dev/api";
 import { verificationDB } from "./db";
+import { validateString, validateEnum, validateArray, validateURL, ValidationError } from "./validation";
 
 export interface ReportDeviceRequest {
   deviceId: number;
@@ -18,6 +19,22 @@ export interface ReportDeviceResponse {
 export const report = api<ReportDeviceRequest, ReportDeviceResponse>(
   { expose: true, method: "POST", path: "/report" },
   async (req) => {
+    try {
+      validateString(req.reporterAlias, "Reporter alias", 2, 100);
+      validateEnum(req.reportType, "Report type", ["stolen", "fraud", "tampered", "fake", "other"] as const);
+      validateString(req.description, "Description", 10, 5000);
+      
+      if (req.evidenceUrls) {
+        validateArray(req.evidenceUrls, "Evidence URLs", 0, 10);
+        req.evidenceUrls.forEach(url => validateURL(url, "Evidence URL"));
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw APIError.invalidArgument(error.message);
+      }
+      throw error;
+    }
+
     const { deviceId, reporterAlias, reportType, description, evidenceUrls } = req;
 
     const result = await verificationDB.queryRow<{ id: number }>`

@@ -255,7 +255,20 @@ export const getVerificationAudit = api<GetVerificationAuditRequest, GetVerifica
       params.push(deviceId);
     }
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    let query = `
+      SELECT va.id, va.verification_request_id, va.device_id,
+             vn.node_name, vn.node_type, va.node_response,
+             va.response_status, va.response_time_ms, va.created_at
+      FROM verification_audit va
+      JOIN verification_nodes vn ON va.node_id = vn.id
+    `;
+
+    if (whereConditions.length > 0) {
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+
+    query += ` ORDER BY va.created_at DESC LIMIT $${params.length + 1}`;
+    params.push(limit);
 
     const audits = await verificationDB.queryAll<{
       id: number;
@@ -267,22 +280,14 @@ export const getVerificationAudit = api<GetVerificationAuditRequest, GetVerifica
       response_status: string;
       response_time_ms: number;
       created_at: Date;
-    }>`
-      SELECT va.id, va.verification_request_id, va.device_id,
-             vn.node_name, vn.node_type, va.node_response,
-             va.response_status, va.response_time_ms, va.created_at
-      FROM verification_audit va
-      JOIN verification_nodes vn ON va.node_id = vn.id
-      ${whereClause}
-      ORDER BY va.created_at DESC
-      LIMIT ${limit}
-    `;
+    }>(query, ...params);
 
-    const totalResult = await verificationDB.queryRow<{ count: number }>`
-      SELECT COUNT(*) as count
-      FROM verification_audit va
-      ${whereClause}
-    `;
+    let countQuery = `SELECT COUNT(*) as count FROM verification_audit va`;
+    if (whereConditions.length > 0) {
+      countQuery += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+
+    const totalResult = await verificationDB.queryRow<{ count: number }>(countQuery, ...params.slice(0, -1));
 
     return {
       audits: audits.map(audit => ({

@@ -1,5 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { verificationDB } from "./db";
+import { validateString, validateEnum, ValidationError } from "./validation";
 
 export interface VerifyDeviceRequest {
   identifier: string;
@@ -78,6 +79,16 @@ export interface VerifyDeviceResponse {
 export const verify = api<VerifyDeviceRequest, VerifyDeviceResponse>(
   { expose: true, method: "POST", path: "/verify" },
   async (req) => {
+    try {
+      validateString(req.identifier, "Identifier", 1, 100);
+      validateEnum(req.identifierType, "Identifier type", ["serial", "imei"] as const);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw APIError.invalidArgument(error.message);
+      }
+      throw error;
+    }
+
     const { identifier, identifierType, includeTrustScore = true, includeFingerprint = false } = req;
     const verificationId = `ver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 

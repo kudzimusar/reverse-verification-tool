@@ -1,5 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { verificationDB } from "./db";
+import { validateString, validateEnum, ValidationError } from "./validation";
 
 export interface FlagDeviceRequest {
   deviceId: number;
@@ -19,6 +20,17 @@ export interface FlagDeviceResponse {
 export const flagDevice = api<FlagDeviceRequest, FlagDeviceResponse>(
   { expose: true, method: "POST", path: "/device/:deviceId/flag" },
   async (req) => {
+    try {
+      validateEnum(req.flagType, "Flag type", ["stolen", "fraud", "tampered", "fake", "suspicious"] as const);
+      validateString(req.reason, "Reason", 5, 1000);
+      validateString(req.flaggedBy, "Flagged by", 2, 100);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw APIError.invalidArgument(error.message);
+      }
+      throw error;
+    }
+
     const { deviceId, flagType, reason, flaggedBy, partnerName } = req;
 
     // Check if device exists
