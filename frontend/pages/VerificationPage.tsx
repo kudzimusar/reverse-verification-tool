@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Search, Smartphone, QrCode } from 'lucide-react';
+import { Search, Smartphone, QrCode, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { DeviceVerificationResult } from '../components/DeviceVerificationResult';
 import backend from '~backend/client';
@@ -13,6 +14,8 @@ import type { VerifyDeviceResponse } from '~backend/verification/verify';
 export function VerificationPage() {
   const [identifier, setIdentifier] = useState('');
   const [identifierType, setIdentifierType] = useState<'serial' | 'imei'>('serial');
+  const [includeTrustScore, setIncludeTrustScore] = useState(true);
+  const [includeFingerprint, setIncludeFingerprint] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<VerifyDeviceResponse | null>(null);
   const { toast } = useToast();
@@ -32,6 +35,8 @@ export function VerificationPage() {
       const response = await backend.verification.verify({
         identifier: identifier.trim(),
         identifierType,
+        includeTrustScore,
+        includeFingerprint,
       });
       setResult(response);
     } catch (error) {
@@ -64,12 +69,43 @@ export function VerificationPage() {
     }
   };
 
+  const handleCalculateTrustScore = async () => {
+    if (!result?.device.id) return;
+
+    try {
+      await backend.verification.calculateTrustScore({
+        deviceId: result.device.id,
+      });
+      
+      // Refresh verification to get updated trust score
+      const response = await backend.verification.verify({
+        identifier: identifier.trim(),
+        identifierType,
+        includeTrustScore: true,
+        includeFingerprint,
+      });
+      setResult(response);
+
+      toast({
+        title: "Trust Score Updated",
+        description: "Trust score has been recalculated with latest data",
+      });
+    } catch (error) {
+      console.error('Trust score calculation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to calculate trust score",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">Device Verification</h1>
+        <h1 className="text-4xl font-bold text-gray-900">Advanced Device Verification</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Verify the authenticity and ownership history of any electronic device using our blockchain-backed verification system.
+          Verify device authenticity with AI-powered trust scoring, multi-node verification, and blockchain-backed security.
         </p>
       </div>
 
@@ -80,7 +116,7 @@ export function VerificationPage() {
             <span>Verify a Device</span>
           </CardTitle>
           <CardDescription>
-            Enter a serial number or IMEI to check the device's verification status and history.
+            Enter a serial number or IMEI to check the device's verification status, trust score, and complete history.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -115,6 +151,33 @@ export function VerificationPage() {
             </div>
           </div>
 
+          {/* Advanced Options */}
+          <div className="space-y-3 pt-4 border-t">
+            <Label className="text-sm font-medium">Advanced Options</Label>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="include-trust-score"
+                checked={includeTrustScore}
+                onCheckedChange={(checked) => setIncludeTrustScore(checked as boolean)}
+              />
+              <Label htmlFor="include-trust-score" className="text-sm">
+                Include AI Trust Score Analysis
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="include-fingerprint"
+                checked={includeFingerprint}
+                onCheckedChange={(checked) => setIncludeFingerprint(checked as boolean)}
+              />
+              <Label htmlFor="include-fingerprint" className="text-sm">
+                Include Device Fingerprint Check
+              </Label>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
             <Button variant="outline" className="flex-1">
               <QrCode className="h-4 w-4 mr-2" />
@@ -126,11 +189,17 @@ export function VerificationPage() {
             </Button>
           </div>
 
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t space-y-2">
             <Button variant="secondary" onClick={handleSeedData} className="w-full">
               Load Sample Data (Demo)
             </Button>
-            <p className="text-sm text-gray-500 mt-2 text-center">
+            {result && (
+              <Button variant="outline" onClick={handleCalculateTrustScore} className="w-full">
+                <Shield className="h-4 w-4 mr-2" />
+                Recalculate Trust Score
+              </Button>
+            )}
+            <p className="text-sm text-gray-500 text-center">
               Click to add sample devices for testing. Try verifying "SN123456789" after seeding.
             </p>
           </div>

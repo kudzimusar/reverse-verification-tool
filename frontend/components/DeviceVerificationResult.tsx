@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Calendar, MapPin, Shield, AlertTriangle, Flag, MessageCircle } from 'lucide-react';
+import { Calendar, MapPin, Shield, AlertTriangle, Flag, MessageCircle, Eye, Fingerprint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from './StatusBadge';
 import { ReportDialog } from './ReportDialog';
+import { TrustScoreDisplay } from './TrustScoreDisplay';
+import { WatchDeviceDialog } from './WatchDeviceDialog';
 import type { VerifyDeviceResponse } from '~backend/verification/verify';
 
 interface DeviceVerificationResultProps {
@@ -14,7 +16,8 @@ interface DeviceVerificationResultProps {
 
 export function DeviceVerificationResult({ result }: DeviceVerificationResultProps) {
   const [showReportDialog, setShowReportDialog] = useState(false);
-  const { device, currentOwner, ownershipHistory, events, reportCount } = result;
+  const [showWatchDialog, setShowWatchDialog] = useState(false);
+  const { device, currentOwner, ownershipHistory, events, reportCount, trustScore, fingerprint, verificationMetadata } = result;
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -36,6 +39,12 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
         {level.charAt(0).toUpperCase() + level.slice(1)}
       </Badge>
     );
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 80) return 'text-green-600';
+    if (confidence >= 60) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
@@ -62,7 +71,20 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <StatusBadge status={device.status} size="lg" />
+            <div className="flex items-center space-x-4">
+              <StatusBadge status={device.status} size="lg" />
+              {device.trustScore && (
+                <Badge variant="outline" className="text-sm">
+                  Trust Score: {device.trustScore}
+                </Badge>
+              )}
+              {fingerprint?.hasFingerprint && (
+                <Badge variant="outline" className="text-sm flex items-center space-x-1">
+                  <Fingerprint className="h-3 w-3" />
+                  <span>Fingerprinted</span>
+                </Badge>
+              )}
+            </div>
             <div className="text-right text-sm text-gray-600">
               <p>Last verified: {formatDate(device.lastVerified)}</p>
               {reportCount > 0 && (
@@ -72,8 +94,33 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
               )}
             </div>
           </div>
+
+          {/* Verification Metadata */}
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <div className="space-y-1">
+                <p className="font-medium">Verification ID: {verificationMetadata.verificationId}</p>
+                <p className="text-gray-600">
+                  Sources checked: {verificationMetadata.dataSourcesChecked.join(', ')}
+                </p>
+              </div>
+              <div className="text-right space-y-1">
+                <p className={`font-medium ${getConfidenceColor(verificationMetadata.confidence)}`}>
+                  {verificationMetadata.confidence}% Confidence
+                </p>
+                <p className="text-gray-600">
+                  {formatDate(verificationMetadata.timestamp)}
+                </p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Trust Score Display */}
+      {trustScore && (
+        <TrustScoreDisplay trustScore={trustScore} />
+      )}
 
       {/* Current Owner */}
       {currentOwner && (
@@ -109,7 +156,53 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Message Owner
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowWatchDialog(true)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Watch Device
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fingerprint Information */}
+      {fingerprint && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Fingerprint className="h-5 w-5" />
+              <span>Device Fingerprint</span>
+            </CardTitle>
+            <CardDescription>
+              Hardware-level device identification for enhanced security
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fingerprint.hasFingerprint ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Fingerprint Status</span>
+                  <Badge variant="default">Verified</Badge>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs font-mono text-gray-600 break-all">
+                    {fingerprint.fingerprintHash}
+                  </p>
+                </div>
+                {fingerprint.fingerprintAge !== undefined && (
+                  <p className="text-sm text-gray-600">
+                    Fingerprint created {fingerprint.fingerprintAge} days ago
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-600">No device fingerprint available</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Device fingerprinting provides additional security against ID tampering
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -164,7 +257,7 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
                 <div key={event.id}>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium capitalize">{event.eventType}</p>
+                      <p className="font-medium capitalize">{event.eventType.replace('_', ' ')}</p>
                       {event.eventDescription && (
                         <p className="text-sm text-gray-600">{event.eventDescription}</p>
                       )}
@@ -220,7 +313,8 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-900">Important Notice</p>
               <p className="text-sm text-gray-600">
-                Data provided via STOLEN blockchain ledger. Information is tamper-proof but dependent on reporting accuracy. 
+                Data provided via STOLEN blockchain ledger with multi-node verification. Information is tamper-proof but dependent on reporting accuracy. 
+                Trust scores are calculated using AI algorithms and should be used as guidance only. 
                 Always verify device condition and seller legitimacy before making any transaction.
               </p>
             </div>
@@ -231,6 +325,13 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
       <ReportDialog
         open={showReportDialog}
         onOpenChange={setShowReportDialog}
+        deviceId={device.id}
+        deviceName={device.deviceName}
+      />
+
+      <WatchDeviceDialog
+        open={showWatchDialog}
+        onOpenChange={setShowWatchDialog}
         deviceId={device.id}
         deviceName={device.deviceName}
       />
