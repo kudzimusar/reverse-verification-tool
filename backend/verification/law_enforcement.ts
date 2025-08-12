@@ -164,28 +164,25 @@ export const getLawEnforcementReports = api<GetLawEnforcementReportsRequest, Get
   async (req) => {
     const { deviceId, jurisdiction, reportType, reporterId, limit = 50 } = req;
 
-    let whereClause = "WHERE 1=1";
-    const params: any[] = [];
-
+    let whereConditions: string[] = [];
+    
     if (deviceId) {
-      whereClause += ` AND ler.device_id = $${params.length + 1}`;
-      params.push(deviceId);
+      whereConditions.push(`ler.device_id = ${deviceId}`);
     }
 
     if (jurisdiction) {
-      whereClause += ` AND ler.jurisdiction = $${params.length + 1}`;
-      params.push(jurisdiction);
+      whereConditions.push(`ler.jurisdiction = '${jurisdiction}'`);
     }
 
     if (reportType) {
-      whereClause += ` AND ler.report_type = $${params.length + 1}`;
-      params.push(reportType);
+      whereConditions.push(`ler.report_type = '${reportType}'`);
     }
 
     if (reporterId) {
-      whereClause += ` AND ler.reporter_id = $${params.length + 1}`;
-      params.push(reporterId);
+      whereConditions.push(`ler.reporter_id = ${reporterId}`);
     }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const reports = await verificationDB.queryAll<{
       id: number;
@@ -210,7 +207,7 @@ export const getLawEnforcementReports = api<GetLawEnforcementReportsRequest, Get
       LIMIT ${limit}
     `;
 
-    const total = await verificationDB.queryRow<{ count: number }>`
+    const totalResult = await verificationDB.queryRow<{ count: number }>`
       SELECT COUNT(*) as count
       FROM law_enforcement_reports ler
       ${whereClause}
@@ -229,7 +226,7 @@ export const getLawEnforcementReports = api<GetLawEnforcementReportsRequest, Get
         submissionDate: report.created_at,
         blockchainProofHash: report.blockchain_proof_hash,
       })),
-      total: total?.count || 0,
+      total: totalResult?.count || 0,
     };
   }
 );

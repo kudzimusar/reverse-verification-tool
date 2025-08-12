@@ -86,7 +86,7 @@ export const unwatchDevice = api<UnwatchDeviceRequest, UnwatchDeviceResponse>(
   async (req) => {
     const { deviceId, userEmail } = req;
 
-    const result = await verificationDB.exec`
+    await verificationDB.exec`
       DELETE FROM device_watchers 
       WHERE device_id = ${deviceId} AND user_email = ${userEmail}
     `;
@@ -120,10 +120,11 @@ export const checkDeviceChanges = api<CheckDeviceChangesRequest, CheckDeviceChan
   async (req) => {
     const { deviceId } = req;
 
-    let whereClause = "";
+    let whereConditions: string[] = [];
     if (deviceId) {
-      whereClause = `WHERE dw.device_id = ${deviceId}`;
+      whereConditions.push(`dw.device_id = ${deviceId}`);
     }
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     // Get all watchers and their devices
     const watchers = await verificationDB.queryAll<{

@@ -82,10 +82,6 @@ export const verify = api<VerifyDeviceRequest, VerifyDeviceResponse>(
     const verificationId = `ver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Find device by identifier
-    const whereClause = identifierType === "serial" 
-      ? "serial_number = $1" 
-      : "imei = $1";
-    
     const device = await verificationDB.queryRow<{
       id: number;
       serial_number: string;
@@ -102,8 +98,8 @@ export const verify = api<VerifyDeviceRequest, VerifyDeviceResponse>(
       SELECT id, serial_number, imei, device_name, model, brand, image_url, 
              status, updated_at, current_trust_score, risk_category
       FROM devices 
-      WHERE ${verificationDB.rawQuery(whereClause, identifier)}
-    `.then(result => result);
+      WHERE ${identifierType === 'serial' ? 'serial_number' : 'imei'} = ${identifier}
+    `;
 
     if (!device) {
       throw APIError.notFound("Device not found");

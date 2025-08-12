@@ -43,10 +43,6 @@ export const batchVerify = api<BatchVerifyRequest, BatchVerifyResponse>(
 
       try {
         // Find device by identifier
-        const whereClause = identifierType === "serial" 
-          ? "serial_number = $1" 
-          : "imei = $1";
-        
         const device = await verificationDB.queryRow<{
           id: number;
           serial_number: string;
@@ -59,8 +55,8 @@ export const batchVerify = api<BatchVerifyRequest, BatchVerifyResponse>(
         }>`
           SELECT id, serial_number, imei, device_name, model, brand, status, updated_at
           FROM devices 
-          WHERE ${verificationDB.rawQuery(whereClause, identifier)}
-        `.then(result => result);
+          WHERE ${identifierType === 'serial' ? 'serial_number' : 'imei'} = ${identifier}
+        `;
 
         if (!device) {
           results.push({

@@ -242,18 +242,20 @@ export const getVerificationAudit = api<GetVerificationAuditRequest, GetVerifica
   async (req) => {
     const { requestId, deviceId, limit = 50 } = req;
 
-    let whereClause = "WHERE 1=1";
+    let whereConditions: string[] = [];
     const params: any[] = [];
     
     if (requestId) {
-      whereClause += ` AND va.verification_request_id = $${params.length + 1}`;
+      whereConditions.push(`va.verification_request_id = $${params.length + 1}`);
       params.push(requestId);
     }
     
     if (deviceId) {
-      whereClause += ` AND va.device_id = $${params.length + 1}`;
+      whereConditions.push(`va.device_id = $${params.length + 1}`);
       params.push(deviceId);
     }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const audits = await verificationDB.queryAll<{
       id: number;
@@ -276,7 +278,7 @@ export const getVerificationAudit = api<GetVerificationAuditRequest, GetVerifica
       LIMIT ${limit}
     `;
 
-    const total = await verificationDB.queryRow<{ count: number }>`
+    const totalResult = await verificationDB.queryRow<{ count: number }>`
       SELECT COUNT(*) as count
       FROM verification_audit va
       ${whereClause}
@@ -294,7 +296,7 @@ export const getVerificationAudit = api<GetVerificationAuditRequest, GetVerifica
         responseTime: audit.response_time_ms,
         timestamp: audit.created_at,
       })),
-      total: total?.count || 0,
+      total: totalResult?.count || 0,
     };
   }
 );
