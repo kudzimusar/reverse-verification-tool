@@ -94,6 +94,12 @@ import {
     watchDevice as api_verification_device_watchers_watchDevice
 } from "~backend/verification/device_watchers";
 import { flagDevice as api_verification_flag_device_flagDevice } from "~backend/verification/flag_device";
+import {
+    generateBadge as api_verification_generate_badge_generateBadge,
+    getBadge as api_verification_generate_badge_getBadge,
+    getBadgeImage as api_verification_generate_badge_getBadgeImage,
+    trackBadgeClick as api_verification_generate_badge_trackBadgeClick
+} from "~backend/verification/generate_badge";
 import { generateLink as api_verification_generate_link_generateLink } from "~backend/verification/generate_link";
 import { getDevice as api_verification_get_device_getDevice } from "~backend/verification/get_device";
 import {
@@ -103,12 +109,26 @@ import {
     verifyBlockchainProof as api_verification_law_enforcement_verifyBlockchainProof
 } from "~backend/verification/law_enforcement";
 import {
+    addLifecycleEvent as api_verification_lifecycle_addLifecycleEvent,
+    getLifecycle as api_verification_lifecycle_getLifecycle
+} from "~backend/verification/lifecycle";
+import {
     getVerificationAudit as api_verification_multi_node_verification_getVerificationAudit,
     multiNodeVerify as api_verification_multi_node_verification_multiNodeVerify
 } from "~backend/verification/multi_node_verification";
+import {
+    createPartnerBadge as api_verification_partner_api_createPartnerBadge,
+    getPartnerBadges as api_verification_partner_api_getPartnerBadges,
+    partnerVerification as api_verification_partner_api_partnerVerification
+} from "~backend/verification/partner_api";
 import { report as api_verification_report_report } from "~backend/verification/report";
 import { search as api_verification_search_search } from "~backend/verification/search";
 import { seed as api_verification_seed_seed } from "~backend/verification/seed";
+import {
+    createSellerProfile as api_verification_seller_dashboard_createSellerProfile,
+    generateSellerBadge as api_verification_seller_dashboard_generateSellerBadge,
+    getSellerDashboard as api_verification_seller_dashboard_getSellerDashboard
+} from "~backend/verification/seller_dashboard";
 import {
     calculateTrustScore as api_verification_trust_scoring_calculateTrustScore,
     getTrustScore as api_verification_trust_scoring_getTrustScore
@@ -127,31 +147,52 @@ export namespace verification {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.addLifecycleEvent = this.addLifecycleEvent.bind(this)
             this.batchVerify = this.batchVerify.bind(this)
             this.calculateTrustScore = this.calculateTrustScore.bind(this)
             this.checkDeviceChanges = this.checkDeviceChanges.bind(this)
             this.createFingerprint = this.createFingerprint.bind(this)
+            this.createPartnerBadge = this.createPartnerBadge.bind(this)
+            this.createSellerProfile = this.createSellerProfile.bind(this)
             this.decryptLawEnforcementReport = this.decryptLawEnforcementReport.bind(this)
             this.flagDevice = this.flagDevice.bind(this)
+            this.generateBadge = this.generateBadge.bind(this)
             this.generateLink = this.generateLink.bind(this)
+            this.generateSellerBadge = this.generateSellerBadge.bind(this)
             this.generateZKProof = this.generateZKProof.bind(this)
+            this.getBadge = this.getBadge.bind(this)
+            this.getBadgeImage = this.getBadgeImage.bind(this)
             this.getDevice = this.getDevice.bind(this)
             this.getLawEnforcementReports = this.getLawEnforcementReports.bind(this)
+            this.getLifecycle = this.getLifecycle.bind(this)
+            this.getPartnerBadges = this.getPartnerBadges.bind(this)
+            this.getSellerDashboard = this.getSellerDashboard.bind(this)
             this.getTrustScore = this.getTrustScore.bind(this)
             this.getVerificationAudit = this.getVerificationAudit.bind(this)
             this.getWatchedDevices = this.getWatchedDevices.bind(this)
             this.getZKPHistory = this.getZKPHistory.bind(this)
             this.multiNodeVerify = this.multiNodeVerify.bind(this)
+            this.partnerVerification = this.partnerVerification.bind(this)
             this.report = this.report.bind(this)
             this.search = this.search.bind(this)
             this.seed = this.seed.bind(this)
             this.submitLawEnforcementReport = this.submitLawEnforcementReport.bind(this)
+            this.trackBadgeClick = this.trackBadgeClick.bind(this)
             this.unwatchDevice = this.unwatchDevice.bind(this)
             this.verify = this.verify.bind(this)
             this.verifyBlockchainProof = this.verifyBlockchainProof.bind(this)
             this.verifyFingerprint = this.verifyFingerprint.bind(this)
             this.verifyZKProof = this.verifyZKProof.bind(this)
             this.watchDevice = this.watchDevice.bind(this)
+        }
+
+        /**
+         * Adds a lifecycle event to a device's history.
+         */
+        public async addLifecycleEvent(params: RequestType<typeof api_verification_lifecycle_addLifecycleEvent>): Promise<ResponseType<typeof api_verification_lifecycle_addLifecycleEvent>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/lifecycle/add-event`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_lifecycle_addLifecycleEvent>
         }
 
         /**
@@ -191,6 +232,24 @@ export namespace verification {
         }
 
         /**
+         * Allows partners to generate verification badges for devices.
+         */
+        public async createPartnerBadge(params: RequestType<typeof api_verification_partner_api_createPartnerBadge>): Promise<ResponseType<typeof api_verification_partner_api_createPartnerBadge>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/partner/badge/create`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_partner_api_createPartnerBadge>
+        }
+
+        /**
+         * Creates a seller profile for badge generation and device management.
+         */
+        public async createSellerProfile(params: RequestType<typeof api_verification_seller_dashboard_createSellerProfile>): Promise<ResponseType<typeof api_verification_seller_dashboard_createSellerProfile>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/seller/profile/create`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_seller_dashboard_createSellerProfile>
+        }
+
+        /**
          * Decrypts a law enforcement report (restricted access).
          */
         public async decryptLawEnforcementReport(params: RequestType<typeof api_verification_law_enforcement_decryptLawEnforcementReport>): Promise<ResponseType<typeof api_verification_law_enforcement_decryptLawEnforcementReport>> {
@@ -217,6 +276,15 @@ export namespace verification {
         }
 
         /**
+         * Generates a verification badge for a device that can be embedded on partner sites.
+         */
+        public async generateBadge(params: RequestType<typeof api_verification_generate_badge_generateBadge>): Promise<ResponseType<typeof api_verification_generate_badge_generateBadge>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/badge/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_generate_badge_generateBadge>
+        }
+
+        /**
          * Generates a public verification link for a device.
          */
         public async generateLink(params: RequestType<typeof api_verification_generate_link_generateLink>): Promise<ResponseType<typeof api_verification_generate_link_generateLink>> {
@@ -226,12 +294,45 @@ export namespace verification {
         }
 
         /**
+         * Allows sellers to generate verification badges for their device listings.
+         */
+        public async generateSellerBadge(params: RequestType<typeof api_verification_seller_dashboard_generateSellerBadge>): Promise<ResponseType<typeof api_verification_seller_dashboard_generateSellerBadge>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/seller/badge/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_seller_dashboard_generateSellerBadge>
+        }
+
+        /**
          * Generates a zero-knowledge proof for device ownership or authenticity.
          */
         public async generateZKProof(params: RequestType<typeof api_verification_zkp_verification_generateZKProof>): Promise<ResponseType<typeof api_verification_zkp_verification_generateZKProof>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/zkp/generate-proof`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_zkp_verification_generateZKProof>
+        }
+
+        /**
+         * Gets badge information and validates its status.
+         */
+        public async getBadge(params: { badgeId: string }): Promise<ResponseType<typeof api_verification_generate_badge_getBadge>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/badge/${encodeURIComponent(params.badgeId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_generate_badge_getBadge>
+        }
+
+        /**
+         * Generates badge image for embedding.
+         */
+        public async getBadgeImage(params: RequestType<typeof api_verification_generate_badge_getBadgeImage>): Promise<ResponseType<typeof api_verification_generate_badge_getBadgeImage>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                format: params.format === undefined ? undefined : String(params.format),
+                size:   params.size === undefined ? undefined : String(params.size),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/badge/${encodeURIComponent(params.badgeId)}/image`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_generate_badge_getBadgeImage>
         }
 
         /**
@@ -259,6 +360,45 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/law-enforcement/reports`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_law_enforcement_getLawEnforcementReports>
+        }
+
+        /**
+         * Gets complete lifecycle information for a device via badge or device ID.
+         */
+        public async getLifecycle(params: RequestType<typeof api_verification_lifecycle_getLifecycle>): Promise<ResponseType<typeof api_verification_lifecycle_getLifecycle>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                deviceId:       params.deviceId === undefined ? undefined : String(params.deviceId),
+                includePrivate: params.includePrivate === undefined ? undefined : String(params.includePrivate),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/lifecycle/${encodeURIComponent(params.badgeId)}`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_lifecycle_getLifecycle>
+        }
+
+        /**
+         * Gets all badges created by a partner.
+         */
+        public async getPartnerBadges(params: RequestType<typeof api_verification_partner_api_getPartnerBadges>): Promise<ResponseType<typeof api_verification_partner_api_getPartnerBadges>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:  params.limit === undefined ? undefined : String(params.limit),
+                status: params.status === undefined ? undefined : String(params.status),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/partner/${encodeURIComponent(params.partnerId)}/badges`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_partner_api_getPartnerBadges>
+        }
+
+        /**
+         * Gets seller dashboard with badges, devices, and analytics.
+         */
+        public async getSellerDashboard(params: { sellerId: number }): Promise<ResponseType<typeof api_verification_seller_dashboard_getSellerDashboard>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/seller/${encodeURIComponent(params.sellerId)}/dashboard`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_seller_dashboard_getSellerDashboard>
         }
 
         /**
@@ -319,6 +459,15 @@ export namespace verification {
         }
 
         /**
+         * Provides verification data for partners without generating badges.
+         */
+        public async partnerVerification(params: RequestType<typeof api_verification_partner_api_partnerVerification>): Promise<ResponseType<typeof api_verification_partner_api_partnerVerification>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/partner/verify`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_partner_api_partnerVerification>
+        }
+
+        /**
          * Reports a device for suspicious activity.
          */
         public async report(params: RequestType<typeof api_verification_report_report>): Promise<ResponseType<typeof api_verification_report_report>> {
@@ -358,6 +507,23 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/law-enforcement/report`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_law_enforcement_submitLawEnforcementReport>
+        }
+
+        /**
+         * Tracks badge clicks and returns verification URL.
+         */
+        public async trackBadgeClick(params: RequestType<typeof api_verification_generate_badge_trackBadgeClick>): Promise<ResponseType<typeof api_verification_generate_badge_trackBadgeClick>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                accessType:  params.accessType,
+                ipAddress:   params.ipAddress,
+                referrerUrl: params.referrerUrl,
+                userAgent:   params.userAgent,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/badge/${encodeURIComponent(params.badgeId)}/click`, {method: "POST", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_generate_badge_trackBadgeClick>
         }
 
         /**

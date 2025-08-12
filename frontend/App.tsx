@@ -5,6 +5,7 @@ import { VerificationPage } from './pages/VerificationPage';
 import { SearchPage } from './pages/SearchPage';
 import { DeviceDetailsPage } from './pages/DeviceDetailsPage';
 import { ApiDashboardPage } from './pages/ApiDashboardPage';
+import { LifecyclePage } from './pages/LifecyclePage';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path="/api-dashboard" element={<ApiDashboardPage />} />
+          <Route path="/lifecycle/:badgeId" element={<LifecyclePage />} />
           <Route path="/*" element={
             <>
               <Header />

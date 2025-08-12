@@ -100,6 +100,29 @@ export const seed = api<void, SeedDataResponse>(
             VALUES (${deviceId}, 'Anonymous', 'stolen', 'Device reported stolen from vehicle', 'verified')
           `;
         }
+
+        // Add sample lifecycle events
+        await verificationDB.exec`
+          INSERT INTO product_lifecycle (device_id, event_category, event_data, event_source, verification_level)
+          VALUES 
+            (${deviceId}, 'ownership', '{"purchaseDate": "2024-01-01", "retailer": "TechStore SA", "price": 999}', 'TechStore SA', 'verified'),
+            (${deviceId}, 'warranty', '{"provider": "Manufacturer", "startDate": "2024-01-01", "endDate": "2025-01-01"}', 'Apple', 'verified')
+        `;
+
+        // Add sample repair record for some devices
+        if (device.serial === "SN123456789") {
+          await verificationDB.exec`
+            INSERT INTO repair_records (device_id, repair_shop, repair_type, repair_description, repair_cost, repair_date, warranty_period_days, is_authorized_repair)
+            VALUES (${deviceId}, 'iStore Cape Town', 'screen', 'Screen replacement due to crack', 299.99, '2024-06-15', 90, true)
+          `;
+        }
+
+        // Add sample warranty
+        await verificationDB.exec`
+          INSERT INTO product_warranties (device_id, warranty_provider, warranty_type, start_date, end_date, is_active)
+          VALUES (${deviceId}, 'Apple Inc.', 'manufacturer', '2024-01-01', '2025-01-01', true)
+          ON CONFLICT DO NOTHING
+        `;
       }
     }
 
@@ -108,12 +131,24 @@ export const seed = api<void, SeedDataResponse>(
       INSERT INTO partners (name, api_key, partner_type, contact_email, is_active)
       VALUES 
         ('SAPS Cybercrime Unit', 'le_key_saps_001', 'law_enforcement', 'cybercrime@saps.gov.za', true),
-        ('Insurance Fraud Unit', 'le_key_ifu_001', 'law_enforcement', 'fraud@insurance.co.za', true)
+        ('Insurance Fraud Unit', 'le_key_ifu_001', 'law_enforcement', 'fraud@insurance.co.za', true),
+        ('TechStore SA', 'partner_key_techstore_001', 'marketplace', 'api@techstore.co.za', true),
+        ('Gumtree', 'partner_key_gumtree_001', 'marketplace', 'api@gumtree.co.za', true)
       ON CONFLICT (api_key) DO NOTHING
     `;
 
+    // Insert sample seller profiles
+    await verificationDB.exec`
+      INSERT INTO seller_profiles (seller_alias, seller_type, verification_level, contact_method, reputation_score, total_sales)
+      VALUES 
+        ('TechDealer_SA', 'business', 'premium', 'email', 95, 150),
+        ('JohnDoe_CT', 'individual', 'verified', 'platform_message', 78, 12),
+        ('ElectronicsHub', 'dealer', 'premium', 'email', 88, 89)
+      ON CONFLICT (seller_alias) DO NOTHING
+    `;
+
     return {
-      message: "Sample data seeded successfully with diverse serial number formats",
+      message: "Sample data seeded successfully with diverse serial number formats and lifecycle features",
       devicesCreated,
     };
   }
