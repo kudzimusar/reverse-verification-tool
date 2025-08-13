@@ -10,6 +10,7 @@ import { ReportDialog } from './ReportDialog';
 import { TrustScoreDisplay } from './TrustScoreDisplay';
 import { WatchDeviceDialog } from './WatchDeviceDialog';
 import { BadgeGenerator } from './BadgeGenerator';
+import { VerificationBadge } from './VerificationBadge';
 import type { VerifyDeviceResponse } from '~backend/verification/verify';
 
 interface DeviceVerificationResultProps {
@@ -75,6 +76,11 @@ export function DeviceVerificationResult({ result }: DeviceVerificationResultPro
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <StatusBadge status={device.status} size="lg" />
+              <VerificationBadge 
+                entityId={device.id} 
+                entityName={device.deviceName}
+                size="md"
+              />
               {device.trustScore && (
                 <Badge variant="outline" className="text-sm">
                   Trust Score: {device.trustScore}

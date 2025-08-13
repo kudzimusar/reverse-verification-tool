@@ -7,7 +7,8 @@ import { MultiNodeVerification } from '../components/dashboard/MultiNodeVerifica
 import { VerificationLogs } from '../components/dashboard/VerificationLogs';
 import { UsageAnalytics } from '../components/dashboard/UsageAnalytics';
 import { ApiKeys } from '../components/dashboard/ApiKeys';
-import { Shield, BarChart3, Key, FileText, Upload, Search, Network } from 'lucide-react';
+import { BadgeManagement } from '../components/admin/BadgeManagement';
+import { Shield, BarChart3, Key, FileText, Upload, Search, Network, Award } from 'lucide-react';
 
 export function ApiDashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,7 +21,7 @@ export function ApiDashboardPage() {
             <Shield className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">STOLEN Verification API</h1>
-              <p className="text-gray-600">Advanced Partner Console with Multi-Node Verification</p>
+              <p className="text-gray-600">Advanced Partner Console with Multi-Node Verification & Badge Management</p>
             </div>
           </div>
         </div>
@@ -28,7 +29,7 @@ export function ApiDashboardPage() {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -44,6 +45,10 @@ export function ApiDashboardPage() {
             <TabsTrigger value="batch" className="flex items-center space-x-2">
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Batch</span>
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="flex items-center space-x-2">
+              <Award className="h-4 w-4" />
+              <span className="hidden sm:inline">Badges</span>
             </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -83,12 +88,12 @@ export function ApiDashboardPage() {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Flagged Devices</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Verification Badges</CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">23</div>
-                  <p className="text-xs text-muted-foreground">2.6% of found devices</p>
+                  <div className="text-2xl font-bold">89</div>
+                  <p className="text-xs text-muted-foreground">Active verified entities</p>
                 </CardContent>
               </Card>
               <Card>
@@ -130,7 +135,23 @@ export function ApiDashboardPage() {
                   
                   <Card className="p-4">
                     <div className="flex items-center space-x-3 mb-3">
-                      <Shield className="h-6 w-6 text-green-600" />
+                      <Award className="h-6 w-6 text-green-600" />
+                      <h3 className="font-semibold">Verification Badges</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Issue and manage verification badges with complete lifecycle tracking and transparency.
+                    </p>
+                    <button 
+                      onClick={() => setActiveTab('badges')}
+                      className="text-blue-600 text-sm hover:underline"
+                    >
+                      Manage Badges →
+                    </button>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <Shield className="h-6 w-6 text-purple-600" />
                       <h3 className="font-semibold">AI Trust Scoring</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
@@ -146,7 +167,7 @@ export function ApiDashboardPage() {
 
                   <Card className="p-4">
                     <div className="flex items-center space-x-3 mb-3">
-                      <FileText className="h-6 w-6 text-purple-600" />
+                      <FileText className="h-6 w-6 text-orange-600" />
                       <h3 className="font-semibold">Device Fingerprinting</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
@@ -162,7 +183,7 @@ export function ApiDashboardPage() {
 
                   <Card className="p-4">
                     <div className="flex items-center space-x-3 mb-3">
-                      <Upload className="h-6 w-6 text-orange-600" />
+                      <Upload className="h-6 w-6 text-red-600" />
                       <h3 className="font-semibold">Batch Processing</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
@@ -178,7 +199,7 @@ export function ApiDashboardPage() {
 
                   <Card className="p-4">
                     <div className="flex items-center space-x-3 mb-3">
-                      <BarChart3 className="h-6 w-6 text-red-600" />
+                      <BarChart3 className="h-6 w-6 text-indigo-600" />
                       <h3 className="font-semibold">Real-time Analytics</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
@@ -189,22 +210,6 @@ export function ApiDashboardPage() {
                       className="text-blue-600 text-sm hover:underline"
                     >
                       View Analytics →
-                    </button>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Key className="h-6 w-6 text-indigo-600" />
-                      <h3 className="font-semibold">API Management</h3>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Generate and manage API keys with different access levels and usage monitoring.
-                    </p>
-                    <button 
-                      onClick={() => setActiveTab('api-keys')}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      Manage API Keys →
                     </button>
                   </Card>
                 </div>
@@ -222,6 +227,10 @@ export function ApiDashboardPage() {
 
           <TabsContent value="batch">
             <BatchVerification />
+          </TabsContent>
+
+          <TabsContent value="badges">
+            <BadgeManagement />
           </TabsContent>
 
           <TabsContent value="logs">

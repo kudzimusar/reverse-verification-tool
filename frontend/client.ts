@@ -82,6 +82,14 @@ export interface ClientOptions {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import {
+    batchUpdateBadges as api_verification_badge_lifecycle_batchUpdateBadges,
+    createBadge as api_verification_badge_lifecycle_createBadge,
+    getBadgeStats as api_verification_badge_lifecycle_getBadgeStats,
+    getHistory as api_verification_badge_lifecycle_getHistory,
+    getStatus as api_verification_badge_lifecycle_getStatus,
+    revokeBadge as api_verification_badge_lifecycle_revokeBadge
+} from "~backend/verification/badge_lifecycle";
 import { batchVerify as api_verification_batch_verify_batchVerify } from "~backend/verification/batch_verify";
 import {
     createFingerprint as api_verification_device_fingerprinting_createFingerprint,
@@ -148,9 +156,11 @@ export namespace verification {
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
             this.addLifecycleEvent = this.addLifecycleEvent.bind(this)
+            this.batchUpdateBadges = this.batchUpdateBadges.bind(this)
             this.batchVerify = this.batchVerify.bind(this)
             this.calculateTrustScore = this.calculateTrustScore.bind(this)
             this.checkDeviceChanges = this.checkDeviceChanges.bind(this)
+            this.createBadge = this.createBadge.bind(this)
             this.createFingerprint = this.createFingerprint.bind(this)
             this.createPartnerBadge = this.createPartnerBadge.bind(this)
             this.createSellerProfile = this.createSellerProfile.bind(this)
@@ -162,11 +172,14 @@ export namespace verification {
             this.generateZKProof = this.generateZKProof.bind(this)
             this.getBadge = this.getBadge.bind(this)
             this.getBadgeImage = this.getBadgeImage.bind(this)
+            this.getBadgeStats = this.getBadgeStats.bind(this)
             this.getDevice = this.getDevice.bind(this)
+            this.getHistory = this.getHistory.bind(this)
             this.getLawEnforcementReports = this.getLawEnforcementReports.bind(this)
             this.getLifecycle = this.getLifecycle.bind(this)
             this.getPartnerBadges = this.getPartnerBadges.bind(this)
             this.getSellerDashboard = this.getSellerDashboard.bind(this)
+            this.getStatus = this.getStatus.bind(this)
             this.getTrustScore = this.getTrustScore.bind(this)
             this.getVerificationAudit = this.getVerificationAudit.bind(this)
             this.getWatchedDevices = this.getWatchedDevices.bind(this)
@@ -174,6 +187,7 @@ export namespace verification {
             this.multiNodeVerify = this.multiNodeVerify.bind(this)
             this.partnerVerification = this.partnerVerification.bind(this)
             this.report = this.report.bind(this)
+            this.revokeBadge = this.revokeBadge.bind(this)
             this.search = this.search.bind(this)
             this.seed = this.seed.bind(this)
             this.submitLawEnforcementReport = this.submitLawEnforcementReport.bind(this)
@@ -193,6 +207,15 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/lifecycle/add-event`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_lifecycle_addLifecycleEvent>
+        }
+
+        /**
+         * Batch update verification badges for multiple entities.
+         */
+        public async batchUpdateBadges(params: RequestType<typeof api_verification_badge_lifecycle_batchUpdateBadges>): Promise<ResponseType<typeof api_verification_badge_lifecycle_batchUpdateBadges>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/batch-update`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_batchUpdateBadges>
         }
 
         /**
@@ -220,6 +243,15 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/check-device-changes`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_device_watchers_checkDeviceChanges>
+        }
+
+        /**
+         * Creates or updates a verified badge for an entity.
+         */
+        public async createBadge(params: RequestType<typeof api_verification_badge_lifecycle_createBadge>): Promise<ResponseType<typeof api_verification_badge_lifecycle_createBadge>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/badge`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_createBadge>
         }
 
         /**
@@ -336,12 +368,35 @@ export namespace verification {
         }
 
         /**
+         * Gets verification badge statistics for admin dashboard.
+         */
+        public async getBadgeStats(params: RequestType<typeof api_verification_badge_lifecycle_getBadgeStats>): Promise<ResponseType<typeof api_verification_badge_lifecycle_getBadgeStats>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit: params.limit === undefined ? undefined : String(params.limit),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/stats`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_getBadgeStats>
+        }
+
+        /**
          * Gets detailed device information by ID.
          */
         public async getDevice(params: { id: number }): Promise<ResponseType<typeof api_verification_get_device_getDevice>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/device/${encodeURIComponent(params.id)}`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_get_device_getDevice>
+        }
+
+        /**
+         * Retrieves lifecycle view/history of verification events.
+         */
+        public async getHistory(params: { entityId: number }): Promise<ResponseType<typeof api_verification_badge_lifecycle_getHistory>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/${encodeURIComponent(params.entityId)}/history`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_getHistory>
         }
 
         /**
@@ -399,6 +454,15 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/seller/${encodeURIComponent(params.sellerId)}/dashboard`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_seller_dashboard_getSellerDashboard>
+        }
+
+        /**
+         * Retrieves current verification status of an entity.
+         */
+        public async getStatus(params: { entityId: number }): Promise<ResponseType<typeof api_verification_badge_lifecycle_getStatus>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/${encodeURIComponent(params.entityId)}/status`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_getStatus>
         }
 
         /**
@@ -474,6 +538,21 @@ export namespace verification {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/report`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_report_report>
+        }
+
+        /**
+         * Revokes verification badge for an entity.
+         */
+        public async revokeBadge(params: RequestType<typeof api_verification_badge_lifecycle_revokeBadge>): Promise<ResponseType<typeof api_verification_badge_lifecycle_revokeBadge>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                reason:    params.reason,
+                revokedBy: params.revokedBy,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/verification/${encodeURIComponent(params.entityId)}/badge`, {query, method: "DELETE", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_verification_badge_lifecycle_revokeBadge>
         }
 
         /**
