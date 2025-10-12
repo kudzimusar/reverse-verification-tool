@@ -3,12 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SingleVerification } from '../components/dashboard/SingleVerification';
 import { BatchVerification } from '../components/dashboard/BatchVerification';
-import { MultiNodeVerification } from '../components/dashboard/MultiNodeVerification';
 import { VerificationLogs } from '../components/dashboard/VerificationLogs';
 import { UsageAnalytics } from '../components/dashboard/UsageAnalytics';
 import { ApiKeys } from '../components/dashboard/ApiKeys';
 import { BadgeManagement } from '../components/admin/BadgeManagement';
-import { Shield, BarChart3, Key, FileText, Upload, Search, Network, Award } from 'lucide-react';
+import { Shield, BarChart3, Key, FileText, Upload, Search, Award, Network } from 'lucide-react';
 
 export function ApiDashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -222,7 +221,15 @@ export function ApiDashboardPage() {
           </TabsContent>
 
           <TabsContent value="multi-node">
-            <MultiNodeVerification />
+            <Card>
+              <CardHeader>
+                <CardTitle>Multi-Node Verification</CardTitle>
+                <CardDescription>This feature has been temporarily disabled</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Multi-node verification is currently unavailable.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="batch">

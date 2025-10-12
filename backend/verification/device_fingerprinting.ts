@@ -147,19 +147,33 @@ export const verifyFingerprint = api<VerifyFingerprintRequest, VerifyFingerprint
       }
     } else {
       // Traditional identifier lookup with fingerprint cross-verification
-      const device = await verificationDB.queryRow<{
-        id: number;
-        serial_number: string;
-        device_name: string;
-      }>`
-        SELECT id, serial_number, device_name
-        FROM devices 
-        WHERE ${identifierType === 'serial' ? 'serial_number' : 'imei'} = ${identifier}
-      `;
+      let device;
+      const idType: "imei" | "serial" = identifierType as any;
+      if (idType === 'serial') {
+        device = await verificationDB.queryRow<{
+          id: number;
+          serial_number: string;
+          device_name: string;
+        }>`
+          SELECT id, serial_number, device_name
+          FROM devices 
+          WHERE serial_number = ${identifier}
+        `;
+      } else {
+        device = await verificationDB.queryRow<{
+          id: number;
+          serial_number: string;
+          device_name: string;
+        }>`
+          SELECT id, serial_number, device_name
+          FROM devices 
+          WHERE imei = ${identifier}
+        `;
+      }
 
       if (device) {
         let matchScore = 50; // Base score for identifier match
-        let matchedComponents = [identifierType];
+        let matchedComponents: string[] = [idType as string];
         let matchType: "exact" | "partial" | "none" = "partial";
 
         // Check fingerprint if provided

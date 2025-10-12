@@ -21,7 +21,7 @@ interface MonitorDeviceRequest {
 export const monitorDevices = api(
   { method: "POST", path: "/monitoring/devices/stream", expose: true },
   async (req: MonitorDeviceRequest) => {
-    const initialStatuses = await verificationDB.query`
+    const initialStatusesGen = await verificationDB.query`
       SELECT 
         id as device_id,
         status,
@@ -30,6 +30,11 @@ export const monitorDevices = api(
       FROM devices
       WHERE id = ANY(${req.deviceIds})
     `;
+
+    const initialStatuses = [];
+    for await (const row of initialStatusesGen) {
+      initialStatuses.push(row);
+    }
 
     return {
       updates: initialStatuses.map(row => ({
@@ -56,7 +61,7 @@ export const deviceActivityTopic = new Topic<DeviceActivityEvent>("device-activi
 export const monitorActivity = api(
   { method: "GET", path: "/monitoring/activity", expose: true },
   async () => {
-    const recentActivity = await verificationDB.query`
+    const recentActivityGen = await verificationDB.query`
       SELECT 
         device_id::text as device_id,
         event_type,
@@ -65,6 +70,11 @@ export const monitorActivity = api(
       ORDER BY created_at DESC
       LIMIT 50
     `;
+
+    const recentActivity = [];
+    for await (const row of recentActivityGen) {
+      recentActivity.push(row);
+    }
 
     return {
       events: recentActivity.map(e => ({
@@ -93,7 +103,7 @@ export const globalStatsTopic = new Topic<GlobalStatsUpdate>("global-stats", {
 export const monitorGlobalStats = api(
   { method: "GET", path: "/monitoring/stats", expose: true },
   async () => {
-    const stats = await verificationDB.query`
+    const statsGen = await verificationDB.query`
       SELECT 
         COUNT(*) as total_devices,
         COUNT(*) FILTER (WHERE status = 'verified') as verified_devices,
@@ -102,18 +112,28 @@ export const monitorGlobalStats = api(
       FROM devices
     `;
 
-    const recentVerifications = await verificationDB.query`
+    const stats = [];
+    for await (const row of statsGen) {
+      stats.push(row);
+    }
+
+    const recentVerificationsGen = await verificationDB.query`
       SELECT COUNT(*) as count
       FROM verification_logs
       WHERE created_at > NOW() - INTERVAL '24 hours'
     `;
 
+    const recentVerifications = [];
+    for await (const row of recentVerificationsGen) {
+      recentVerifications.push(row);
+    }
+
     return {
-      totalDevices: parseInt(stats[0].total_devices),
-      verifiedDevices: parseInt(stats[0].verified_devices),
-      flaggedDevices: parseInt(stats[0].flagged_devices),
-      reportedDevices: parseInt(stats[0].reported_devices),
-      verificationsLast24h: parseInt(recentVerifications[0].count),
+      totalDevices: parseInt(stats[0]?.total_devices || '0'),
+      verifiedDevices: parseInt(stats[0]?.verified_devices || '0'),
+      flaggedDevices: parseInt(stats[0]?.flagged_devices || '0'),
+      reportedDevices: parseInt(stats[0]?.reported_devices || '0'),
+      verificationsLast24h: parseInt(recentVerifications[0]?.count || '0'),
       timestamp: new Date(),
     };
   }

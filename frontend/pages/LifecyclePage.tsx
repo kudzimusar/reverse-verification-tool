@@ -174,7 +174,7 @@ export function LifecyclePage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <StatusBadge status={device.status} size="lg" />
+                <StatusBadge status={device.status as any} size="lg" />
                 {device.trustScore && (
                   <Badge variant="outline" className="text-lg px-3 py-1">
                     Trust Score: {device.trustScore}%

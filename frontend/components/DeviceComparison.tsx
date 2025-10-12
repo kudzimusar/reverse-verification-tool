@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import backend from '~backend/client';
-import type { CompareDevicesResponse } from '~backend/verification/device_comparison';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 export function DeviceComparison() {
   const [deviceIds, setDeviceIds] = useState<string[]>(['']);
-  const [comparison, setComparison] = useState<CompareDevicesResponse | null>(null);
+  const [comparison, setComparison] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -134,7 +133,7 @@ export function DeviceComparison() {
             {comparison.metrics.recommendations.length > 0 && (
               <div className="mt-4 space-y-2">
                 <h4 className="font-semibold">Recommendations:</h4>
-                {comparison.metrics.recommendations.map((rec, idx) => (
+                {comparison.metrics.recommendations.map((rec: string, idx: number) => (
                   <p key={idx} className="text-sm text-muted-foreground">• {rec}</p>
                 ))}
               </div>
@@ -143,7 +142,7 @@ export function DeviceComparison() {
             {comparison.comparison.differences.length > 0 && (
               <div className="mt-4 space-y-2">
                 <h4 className="font-semibold">Key Differences:</h4>
-                {comparison.comparison.differences.map((diff, idx) => (
+                {comparison.comparison.differences.map((diff: string, idx: number) => (
                   <p key={idx} className="text-sm text-muted-foreground">• {diff}</p>
                 ))}
               </div>
@@ -151,7 +150,7 @@ export function DeviceComparison() {
           </Card>
 
           <div className="grid gap-4">
-            {comparison.devices.map((device) => (
+            {comparison.devices.map((device: any) => (
               <Card key={device.deviceId} className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -172,7 +171,7 @@ export function DeviceComparison() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                   <div>
                     <p className="text-xs text-muted-foreground">Trust Score</p>
-                    <TrustScoreDisplay score={device.trustScore} size="sm" />
+                    <div className="text-lg font-bold">{device.trustScore.toFixed(1)}</div>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Verifications</p>

@@ -84,7 +84,7 @@ export function DeviceDetailsPage() {
         </p>
       </div>
 
-      <DeviceVerificationResult result={result} />
+      <DeviceVerificationResult result={result as any} />
     </div>
   );
 }

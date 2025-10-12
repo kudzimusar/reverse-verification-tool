@@ -8,7 +8,6 @@ import { DeviceDetailsPage } from './pages/DeviceDetailsPage';
 import { ApiDashboardPage } from './pages/ApiDashboardPage';
 import { LifecyclePage } from './pages/LifecyclePage';
 import { ComparisonPage } from './pages/ComparisonPage';
-import { AdvancedSearchPage } from './pages/AdvancedSearchPage';
 
 export default function App() {
   return (
@@ -49,11 +48,6 @@ export default function App() {
                     <Route path="/compare" element={
                       <ErrorBoundary>
                         <ComparisonPage />
-                      </ErrorBoundary>
-                    } />
-                    <Route path="/advanced-search" element={
-                      <ErrorBoundary>
-                        <AdvancedSearchPage />
                       </ErrorBoundary>
                     } />
                   </Routes>

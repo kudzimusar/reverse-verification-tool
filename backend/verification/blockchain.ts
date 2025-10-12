@@ -81,11 +81,16 @@ export const recordOnBlockchain = api(
     const dataString = JSON.stringify(recordData);
     const transactionHash = generateTransactionHash(dataString);
     
-    const recentRecords = await verificationDB.query`
+    const recentRecordsGen = await verificationDB.query`
       SELECT data_hash FROM blockchain_records
       ORDER BY created_at DESC
       LIMIT 100
     `;
+
+    const recentRecords = [];
+    for await (const row of recentRecordsGen) {
+      recentRecords.push(row);
+    }
 
     const dataHashes = [
       transactionHash,
@@ -131,7 +136,7 @@ export const recordOnBlockchain = api(
       success: true,
       transactionHash,
       blockNumber,
-      recordId: result.id,
+      recordId: result?.id || '',
       merkleRoot,
       proof,
     };
@@ -220,7 +225,7 @@ export interface GetBlockchainHistoryResponse {
 export const getBlockchainHistory = api(
   { method: "GET", path: "/blockchain/history/:deviceId", expose: true },
   async ({ deviceId }: GetBlockchainHistoryRequest): Promise<GetBlockchainHistoryResponse> => {
-    const records = await verificationDB.query`
+    const recordsGen = await verificationDB.query`
       SELECT 
         id,
         device_id,
@@ -234,6 +239,11 @@ export const getBlockchainHistory = api(
       WHERE device_id = ${deviceId}
       ORDER BY created_at DESC
     `;
+
+    const records = [];
+    for await (const row of recordsGen) {
+      records.push(row);
+    }
 
     const device = await verificationDB.queryRow`
       SELECT blockchain_verified FROM devices WHERE id = ${deviceId}
@@ -274,7 +284,7 @@ export interface GetAuditLogResponse {
 export const getAuditLog = api(
   { method: "GET", path: "/blockchain/audit", expose: true, auth: true },
   async (): Promise<GetAuditLogResponse> => {
-    const records = await verificationDB.query`
+    const recordsGen = await verificationDB.query`
       SELECT 
         created_at,
         event_type,
@@ -287,6 +297,11 @@ export const getAuditLog = api(
       ORDER BY created_at DESC
       LIMIT 1000
     `;
+
+    const records = [];
+    for await (const row of recordsGen) {
+      records.push(row);
+    }
 
     const latestMerkleRoot = records.length > 0 ? records[0].merkle_root : "";
 

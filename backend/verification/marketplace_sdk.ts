@@ -237,7 +237,7 @@ export const getMarketplaceAnalytics = api(
       LEFT JOIN devices d ON ml.device_imei = d.imei
     `;
 
-    const topMarketplaces = await verificationDB.query`
+    const topMarketplacesGen = await verificationDB.query`
       SELECT marketplace, COUNT(*) as count
       FROM marketplace_listings
       GROUP BY marketplace
@@ -245,18 +245,28 @@ export const getMarketplaceAnalytics = api(
       LIMIT 10
     `;
 
-    const recentActivity = await verificationDB.query`
+    const topMarketplaces = [];
+    for await (const row of topMarketplacesGen) {
+      topMarketplaces.push(row);
+    }
+
+    const recentActivityGen = await verificationDB.query`
       SELECT listing_id, marketplace, verification_status, created_at
       FROM marketplace_listings
       ORDER BY created_at DESC
       LIMIT 20
     `;
 
+    const recentActivity = [];
+    for await (const row of recentActivityGen) {
+      recentActivity.push(row);
+    }
+
     return {
-      totalListings: parseInt(stats.total_listings) || 0,
-      verifiedListings: parseInt(stats.verified_listings) || 0,
-      blockedListings: parseInt(stats.blocked_listings) || 0,
-      averageTrustScore: parseFloat(stats.avg_trust_score) || 0,
+      totalListings: parseInt(stats?.total_listings || '0') || 0,
+      verifiedListings: parseInt(stats?.verified_listings || '0') || 0,
+      blockedListings: parseInt(stats?.blocked_listings || '0') || 0,
+      averageTrustScore: parseFloat(stats?.avg_trust_score || '0') || 0,
       topMarketplaces: topMarketplaces.map(m => ({
         marketplace: m.marketplace,
         count: parseInt(m.count),

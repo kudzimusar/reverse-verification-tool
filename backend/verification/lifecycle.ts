@@ -162,9 +162,9 @@ export interface GetLifecycleResponse {
 }
 
 // Gets complete lifecycle information for a device via badge or device ID.
-export const getLifecycle = api<GetLifecycleRequest, GetLifecycleResponse>(
+export const getLifecycle = api(
   { expose: true, method: "GET", path: "/lifecycle/:badgeId" },
-  async (req) => {
+  async (req: GetLifecycleRequest): Promise<GetLifecycleResponse> => {
     const { badgeId, deviceId, includePrivate = false } = req;
     
     let targetDeviceId = deviceId;
@@ -415,7 +415,7 @@ export const getLifecycle = api<GetLifecycleRequest, GetLifecycleResponse>(
           claims: insurance.claim_history || [],
         })),
       },
-      badge: badgeInfo,
+      badge: badgeInfo || undefined,
       accessMetadata: {
         accessId,
         timestamp: new Date(),

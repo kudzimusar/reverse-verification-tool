@@ -31,7 +31,7 @@ interface ComparisonMetrics {
   recommendations: string[];
 }
 
-interface CompareDevicesResponse {
+export interface CompareDevicesResponse {
   devices: DeviceComparisonData[];
   metrics: ComparisonMetrics;
   comparison: {
@@ -52,7 +52,7 @@ export const compareDevices = api(
       throw new Error("Maximum 5 devices can be compared at once");
     }
 
-    const devices = await verificationDB.query`
+    const devicesGen = await verificationDB.query`
       SELECT 
         d.id,
         d.imei,
@@ -78,6 +78,11 @@ export const compareDevices = api(
       GROUP BY d.id, d.imei, d.status, d.manufacturer, d.model, d.trust_score, 
                d.verification_count, d.report_count, d.flagged_reason, d.created_at, d.updated_at
     `;
+
+    const devices = [];
+    for await (const row of devicesGen) {
+      devices.push(row);
+    }
 
     if (devices.length !== req.deviceIds.length) {
       throw new Error("One or more devices not found");

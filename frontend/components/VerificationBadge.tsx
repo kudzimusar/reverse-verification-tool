@@ -51,10 +51,7 @@ export function VerificationBadge({ entityId, entityName, showLifecycleButton = 
     }
   };
 
-  // Load status on mount
-  React.useEffect(() => {
-    loadStatus();
-  }, [entityId]);
+
 
   const getBadgeConfig = (status: string) => {
     switch (status) {
@@ -235,7 +232,7 @@ export function VerificationBadge({ entityId, entityName, showLifecycleButton = 
                                     {event.status === 'verified' ? 'Verification Granted' :
                                      event.status === 'revoked' ? 'Verification Revoked' :
                                      event.status === 'expired' ? 'Verification Expired' :
-                                     event.status === 'extended' ? 'Verification Extended' :
+                                     event.status === 'pending' ? 'Verification Pending' :
                                      'Status Updated'}
                                   </h4>
                                   <span className="text-sm text-gray-600">
