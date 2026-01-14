@@ -3,17 +3,10 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-// Determine base path for GitHub Pages
-const getBasePath = () => {
-  if (process.env.VITE_GITHUB_PAGES === 'true') {
-    // For GitHub Pages, use the repository name as base path
-    return '/reverse-verification-tool/'
-  }
-  return '/'
-}
-
 export default defineConfig({
-  base: getBasePath(),
+  // Always use the repository name as base path for GitHub Pages
+  // This works for both local development and GitHub Pages deployment
+  base: '/reverse-verification-tool/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname),
@@ -27,6 +20,13 @@ export default defineConfig({
     minify: false,
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name].[ext]'
+      }
+    }
   },
   server: {
     port: 3000,

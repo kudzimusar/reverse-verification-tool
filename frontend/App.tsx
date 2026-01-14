@@ -12,7 +12,7 @@ import { ComparisonPage } from './pages/ComparisonPage';
 export default function App() {
   return (
     <ErrorBoundary>
-      <Router>
+      <Router basename="/reverse-verification-tool">
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/api-dashboard" element={
