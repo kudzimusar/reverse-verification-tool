@@ -1,0 +1,115 @@
+name: Track Changes and Iterations
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  track-changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+          echo "commit_author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          echo "commit_date=$(git log -1 --pretty=%ai)" >> $GITHUB_OUTPUT
+
+      - name: Calculate file changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | wc -l)
+            ADDED_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | wc -l)
+            MODIFIED_FILES=$(git diff --name-only --diff-filter=M ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | wc -l)
+            DELETED_FILES=$(git diff --name-only --diff-filter=D ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | wc -l)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l || echo 0)
+            ADDED_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD 2>/dev/null | wc -l || echo 0)
+            MODIFIED_FILES=$(git diff --name-only --diff-filter=M HEAD~1 HEAD 2>/dev/null | wc -l || echo 0)
+            DELETED_FILES=$(git diff --name-only --diff-filter=D HEAD~1 HEAD 2>/dev/null | wc -l || echo 0)
+          fi
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "added_files=$ADDED_FILES" >> $GITHUB_OUTPUT
+          echo "modified_files=$MODIFIED_FILES" >> $GITHUB_OUTPUT
+          echo "deleted_files=$DELETED_FILES" >> $GITHUB_OUTPUT
+
+      - name: Identify changed components
+        id: components
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          fi
+          
+          echo "## Changed Files" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$CHANGED" ]; then
+            echo "$CHANGED" | grep -E "\.(tsx?|jsx?|css|md)$" | head -20 >> $GITHUB_STEP_SUMMARY || echo "No code files changed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No files changed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create iteration report
+        run: |
+          cat > iteration_report.txt << 'EOF'
+          ╔════════════════════════════════════════════════════════════╗
+          ║        REVERSE VERIFICATION TOOL - ITERATION REPORT        ║
+          ╚════════════════════════════════════════════════════════════╝
+          
+          📋 COMMIT INFORMATION
+          ─────────────────────────────────────────────────────────────
+          Commit SHA:     ${{ steps.commit.outputs.sha_short }}
+          Author:         ${{ steps.commit.outputs.commit_author }}
+          Date:           ${{ steps.commit.outputs.commit_date }}
+          Message:        ${{ steps.commit.outputs.commit_message }}
+          
+          📊 FILE STATISTICS
+          ─────────────────────────────────────────────────────────────
+          Total Changed:  ${{ steps.changes.outputs.changed_files }} files
+          Added:          ${{ steps.changes.outputs.added_files }} files
+          Modified:       ${{ steps.changes.outputs.modified_files }} files
+          Deleted:        ${{ steps.changes.outputs.deleted_files }} files
+          
+          🔍 WORKFLOW CONTEXT
+          ─────────────────────────────────────────────────────────────
+          Event:          ${{ github.event_name }}
+          Ref:            ${{ github.ref_name }}
+          Repository:     ${{ github.repository }}
+          
+          ✅ Report Generated: $(date)
+          EOF
+          cat iteration_report.txt
+
+      - name: Upload iteration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: iteration-report-${{ steps.commit.outputs.sha_short }}
+          path: iteration_report.txt
+          retention-days: 90
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('iteration_report.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `\`\`\`\n${report}\n\`\`\``
+            });
