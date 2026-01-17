@@ -48,6 +48,7 @@ jobs:
         working-directory: ./frontend
         run: bun run build
         env:
+          NODE_ENV: production
           VITE_GITHUB_PAGES: 'true'
 
       - name: Upload build artifacts
